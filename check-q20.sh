@@ -1,23 +1,50 @@
 #!/bin/bash
 
-echo "=== EX280 - Question 20 Validation Script ==="
+PROJECT="marathon"
+CRONJOB_NAME="nginx-120"
+IMAGE="registry.access.redhat.com/ubi8/nginx-120"
+SCHEDULE="5 4 2 * *"
+SA_NAME="ex280-ocpsa"
+SUCCESS_LIMIT="13"
 
-project="marathon"
-cronjob_name="scaling"
+echo "🔍 Validating CronJob '$CRONJOB_NAME' in project '$PROJECT'..."
 
-echo -n "Checking cronjob '$cronjob_name' in project '$project'... "
-if oc get cronjob $cronjob_name -n $project &> /dev/null; then
-  echo "✅ CronJob found"
+# Check if CronJob exists
+if ! oc get cronjob "$CRONJOB_NAME" -n "$PROJECT" &>/dev/null; then
+    echo "❌ CronJob '$CRONJOB_NAME' not found in project '$PROJECT'"
+    exit 1
+fi
+echo "✅ CronJob exists"
+
+# Validate image
+cron_image=$(oc get cronjob "$CRONJOB_NAME" -n "$PROJECT" -o jsonpath='{.spec.jobTemplate.spec.template.spec.containers[0].image}')
+if [ "$cron_image" == "$IMAGE" ]; then
+    echo "✅ Image is correct: $cron_image"
 else
-  echo "❌ CronJob not found"
+    echo "❌ Incorrect image: $cron_image"
 fi
 
-echo "Checking cronjob schedule... "
-schedule=$(oc get cronjob $cronjob_name -n $project -o jsonpath='{.spec.schedule}')
-if [[ "$schedule" == "5 4 */2 * *" ]]; then
-  echo "✅ Schedule correct"
+# Validate schedule
+cron_schedule=$(oc get cronjob "$CRONJOB_NAME" -n "$PROJECT" -o jsonpath='{.spec.schedule}')
+if [ "$cron_schedule" == "$SCHEDULE" ]; then
+    echo "✅ Schedule is correct: $cron_schedule"
 else
-  echo "❌ Schedule incorrect: $schedule"
+    echo "❌ Incorrect schedule: $cron_schedule"
 fi
 
-echo "=== Validation Complete ==="
+# Validate service account
+cron_sa=$(oc get cronjob "$CRONJOB_NAME" -n "$PROJECT" -o jsonpath='{.spec.jobTemplate.spec.template.spec.serviceAccountName}')
+if [ "$cron_sa" == "$SA_NAME" ]; then
+    echo "✅ Service account is correct: $cron_sa"
+else
+    echo "❌ Incorrect service account: $cron_sa"
+fi
+
+# Validate successful job history limit
+success_history_limit=$(oc get cronjob "$CRONJOB_NAME" -n "$PROJECT" -o jsonpath='{.spec.successfulJobsHistoryLimit}')
+if [ "$success_history_limit" == "$SUCCESS_LIMIT" ]; then
+    echo "✅ Successful job history limit is correct: $success_history_limit"
+else
+    echo "❌ Incorrect successful job history limit: $success_history_limit"
+fi
+
