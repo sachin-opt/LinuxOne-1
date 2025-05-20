@@ -27,33 +27,35 @@ EOF_UTILITY
 echo "[+] Step 2: Creating /home/student/q14 and writing YAML files..."
 
 mkdir -p /home/student/q14
+#Creating Project
 
+oc  project apples
 # Deployment
 cat << 'EOF_DEPLOY' > /home/student/q14/oranges-deploy.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: oranges
-#  labels:
+  labels:
     app: oranges
 spec:
   replicas: 1
   selector:
-#    matchLabels:
-#      app: oranges
-#  template:
-#    metadata:
-#      labels:
-#        app: oranges
-#    spec:
-#      containers:
-#        - name: nginx
-#          image: quay.io/ysachin/ocp-exam
-#          imagePullPolicy: IfNotPresent
-#          ports:
-#            - containerPort: 80
-#EOF_DEPLOY
-#
+    matchLabels:
+      app: oranges
+  template:
+    metadata:
+      labels:
+        app: oranges
+    spec:
+      containers:
+        - name: nginx
+          image: quay.io/ysachin/ocp-exam
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+EOF_DEPLOY
+
 # Service with non-matching label
 cat << 'EOF_SVC' > /home/student/q14/oranges-service.yaml
 apiVersion: v1
